@@ -11,6 +11,8 @@ env:
   MENDER_ARTIFACT_NAME: artifact                # Mender artifact name
   MENDER_RELEASE_NAME: demo_composition         # Mender release name
   MENDER_RELEASE_VERSION: "1.0"                 # Mender release name
+  DEVICE_TYPE: raspberrypi4_64                  # Mender device_type
+  PLATFORM: linux/arm/v7                        # Docker platform for device type
 
 jobs:
   push_container:
@@ -77,9 +79,6 @@ jobs:
           chmod a+x $BINDIR/app-gen
     
       - name: create artifact
-        env:
-          DEVICE_TYPE: raspberrypi4
-          PLATFORM: linux/arm/v7
         run: |
             app-gen --artifact-name "${MENDER_RELEASE_NAME}-${MENDER_RELEASE_VERSION}" \
             --device-type "${DEVICE_TYPE}" \
