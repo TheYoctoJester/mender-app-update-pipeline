@@ -11,7 +11,7 @@ env:
   MENDER_ARTIFACT_NAME: artifact                # Mender artifact name
   MENDER_RELEASE_NAME: demo_composition         # Mender release name
   MENDER_RELEASE_VERSION: "1.0"                 # Mender release name
-  DEVICE_TYPE: raspberrypi4_64                  # Mender device_type
+  DEVICE_TYPE: raspberrypi4-64                  # Mender device_type
   PLATFORM: linux/arm/v7                        # Docker platform for device type
 
 jobs:
