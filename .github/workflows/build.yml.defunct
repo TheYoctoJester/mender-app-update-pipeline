@@ -1,0 +1,16 @@
+name: build
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: [push]
+
+jobs:
+  create_artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/build-push-action@v5
+        with:
+          tags: test-image:latest
+          push: false
+      - uses: addnab/docker-run-action@v3
+        with:
+          image: test-image:latest
+          run: echo "hello world"

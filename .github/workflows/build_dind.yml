@@ -1,0 +1,103 @@
+name: build_dind_explicit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: 
+      - main
+
+env:
+  MENDER_SERVER_URL: https://hosted.mender.io   # Mender server URL
+  MENDER_ARTIFACT_NAME: artifact                # Mender artifact name
+  MENDER_RELEASE_NAME: demo_composition         # Mender release name
+  MENDER_RELEASE_VERSION: "1.0"                 # Mender release name
+
+jobs:
+  push_container:
+    runs-on: ubuntu-22.04
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged --shm-size=2g
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+    container:
+      image: ubuntu:22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+    
+      - name: update APT
+        # needed here to make the next step work
+        run: apt-get update
+
+      - name: install prerequisites
+        run: |
+          apt-get install --assume-yes \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg-agent \
+            software-properties-common
+
+      - name: prepare Mender APT repos
+        run: |
+          curl -fsSL https://downloads.mender.io/repos/debian/gpg | tee /etc/apt/trusted.gpg.d/mender.asc
+          sed -i.bak -e "\,https://downloads.mender.io/repos/debian,d" /etc/apt/sources.list
+          echo "deb [arch=$(dpkg --print-architecture)] https://downloads.mender.io/repos/debian ubuntu/jammy/stable main" \
+            | tee /etc/apt/sources.list.d/mender.list > /dev/null
+          gpg --show-keys --with-fingerprint /etc/apt/trusted.gpg.d/mender.asc
+    
+      - name: prepare Docker APT repos
+        run: |
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+      - name: update APT
+        # needed here because new repositories have been added
+        run: apt-get update
+    
+      - name: install Docker
+        run: |
+          apt-get install --assume-yes docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+      - name: install mender-artifact
+        run: |
+          apt-get install --assume-yes mender-artifact mender-cli
+
+      - name: install app-update-module generation script
+        env:
+          BINDIR: /usr/local/bin
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/mendersoftware/app-update-module/1.1.0/gen/app-gen -o $BINDIR/app-gen
+          chmod a+x $BINDIR/app-gen
+    
+      - name: create artifact
+        env:
+          DEVICE_TYPE: raspberrypi4
+          PLATFORM: linux/arm/v7
+        run: |
+            app-gen --artifact-name "${MENDER_RELEASE_NAME}-${MENDER_RELEASE_VERSION}" \
+            --device-type "${DEVICE_TYPE}" \
+            --platform "${PLATFORM}" \
+            --application-name "${MENDER_RELEASE_NAME}" \
+            --image docker.io/library/traefik:v2.9 \
+            --image docker.io/traefik/whoami:latest \
+            --orchestrator docker-compose \
+            --manifests-dir . \
+            --output-path ${MENDER_ARTIFACT_NAME}.mender \
+            -- \
+            --software-name="${MENDER_RELEASE_NAME}" \
+            --software-version="v${MENDER_RELEASE_VERSION}"
+
+      # Uploads Mender Artifact to a Mender server
+      - name: Upload Mender Artifacts to Mender server
+        uses: mendersoftware/mender-gh-action-upload-artifact@master
+        with:
+          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
+          mender_artifact: ${{ env.MENDER_ARTIFACT_NAME }}.mender
+          mender_uri: ${{ env.MENDER_SERVER_URL }}
