@@ -84,8 +84,6 @@ jobs:
             --device-type "${DEVICE_TYPE}" \
             --platform "${PLATFORM}" \
             --application-name "${MENDER_RELEASE_NAME}" \
-            --image docker.io/library/traefik:v2.9 \
-            --image docker.io/traefik/whoami:latest \
             --orchestrator docker-compose \
             --manifests-dir . \
             --output-path ${MENDER_ARTIFACT_NAME}.mender \
