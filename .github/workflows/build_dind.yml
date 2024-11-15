@@ -9,15 +9,17 @@ on:
       - main
 
 env:
-  MENDER_SERVER_URL: https://hosted.mender.io   # Mender server URL
-  MENDER_ARTIFACT_NAME: artifact                # Mender artifact name
-  MENDER_RELEASE_NAME: demo_composition         # Mender release name
-  MENDER_RELEASE_VERSION: "1.0"                 # Mender release name
-  DEVICE_TYPE: raspberrypi4-64                  # Mender device_type
-  PLATFORM: linux/arm/v7                        # Docker platform for device type
+  MENDER_SERVER_URL: https://hosted.mender.io                         # Mender server URL
+  MENDER_ARTIFACT_NAME: artifact                                      # Mender artifact name
+  MENDER_RELEASE_NAME: demo_composition                               # Mender release name
+  MENDER_RELEASE_VERSION: "1.0"                                       # Mender release name
+  MENDER_DEPLOYMENT_NAME: app_update_1.0                              # Mender deployment name
+  MENDER_DEVICES_LIST: '[\"75f9db89-4b62-4b8b-ba74-9f373e8cb412\"]'   # List of devices to deploy built artifact to
+  DEVICE_TYPE: raspberrypi4-64                                        # Mender device_type
+  PLATFORM: linux/arm/v7                                              # Docker platform for device type
 
 jobs:
-  push_container:
+  deploy_application_update:
     runs-on: ubuntu-22.04
     services:
       docker:
@@ -93,7 +95,7 @@ jobs:
             --software-name="${MENDER_RELEASE_NAME}" \
             --software-version="v${MENDER_RELEASE_VERSION}"
       
-      # Only upload release Mender Artifact to server
+      # Only releases upload and deploy through Mender server
       - name: Upload Mender Artifacts to Mender server
         if: ${{ github.event_name == 'release' }}
         uses: mendersoftware/mender-gh-action-upload-artifact@master
@@ -101,3 +103,12 @@ jobs:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_artifact: ${{ env.MENDER_ARTIFACT_NAME }}.mender
           mender_uri: ${{ env.MENDER_SERVER_URL }}
+      - name: Create deployment on Mender server
+        if: ${{ github.event_name == 'release' }}
+        uses: mendersoftware/mender-gh-action-create-deployment@master
+        with:
+          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
+          mender_uri: ${{ env.MENDER_SERVER_URL }}
+          mender_deployment_name: ${{ env.MENDER_DEPLOYMENT_NAME }}
+          mender_release_name: ${{ env.MENDER_RELEASE_NAME }}
+          mender_devices_list: ${{ env.MENDER_DEVICES_LIST }}
