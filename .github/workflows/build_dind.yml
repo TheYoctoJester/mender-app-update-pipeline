@@ -110,5 +110,5 @@ jobs:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_uri: ${{ env.MENDER_SERVER_URL }}
           mender_deployment_name: ${{ env.MENDER_DEPLOYMENT_NAME }}
-          mender_release_name: ${{ env.MENDER_RELEASE_NAME }}
+          mender_release_name: ${{ env.MENDER_RELEASE_NAME }}-${{ env.MENDER_RELEASE_VERSION }}
           mender_devices_list: ${{ env.MENDER_DEVICES_LIST }}
