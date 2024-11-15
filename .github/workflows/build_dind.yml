@@ -93,12 +93,9 @@ jobs:
             --software-name="${MENDER_RELEASE_NAME}" \
             --software-version="v${MENDER_RELEASE_VERSION}"
       
-      - name: done if not release
-        run: exit 0
-        if: ${{ github.event_name != 'release' }}
-
-      # Uploads Mender Artifact to a Mender server
+      # Only upload release Mender Artifact to server
       - name: Upload Mender Artifacts to Mender server
+        if: ${{ github.event_name != 'release' }}
         uses: mendersoftware/mender-gh-action-upload-artifact@master
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
