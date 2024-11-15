@@ -14,5 +14,5 @@ services:
     image: "traefik/whoami"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Path(\`/whoami\`)"
+      - 'traefik.http.routers.whoami.rule=Path("/whoami")'
       - "traefik.http.routers.whoami.entrypoints=web"
