@@ -95,7 +95,7 @@ jobs:
       
       # Only upload release Mender Artifact to server
       - name: Upload Mender Artifacts to Mender server
-        if: ${{ github.event_name != 'release' }}
+        if: ${{ github.event_name == 'release' }}
         uses: mendersoftware/mender-gh-action-upload-artifact@master
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
